@@ -56,7 +56,7 @@ class AuthController extends Controller
         return redirect('/login');
     }
 
-    // --- BAGIAN REGISTER (BARU) ---
+    // --- BAGIAN REGISTER ---
     public function showRegisterForm()
     {
         return view('auth.register');
@@ -68,21 +68,22 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:4|confirmed', // Pastikan input password_confirmation ada di view
+            'password' => 'required|string|min:4|confirmed',
         ]);
 
         // 2. Buat User Baru di Database
-        $user = User::create([
+        User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            // Jika kamu punya kolom 'role', bisa tambahkan defaultnya disini, misal: 'role' => 'user'
+            // Default role user biasa
+            'role' => 'user', 
         ]);
 
-        // 3. Langsung Login otomatis setelah daftar
-        Auth::login($user);
+        // 3. (HAPUS ATAU KOMENTAR BARIS INI SUPAYA TIDAK AUTO-LOGIN)
+        // Auth::login($user); 
 
-        // 4. Redirect ke halaman musik/player
-        return redirect()->route('user.player');
+        // 4. Lempar ke halaman Login dengan pesan sukses
+        return redirect()->route('login')->with('success', 'Registrasi berhasil! Silakan login.');
     }
 }
