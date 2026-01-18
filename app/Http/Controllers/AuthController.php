@@ -16,25 +16,38 @@ class AuthController extends Controller
     }
 
     public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
+{
+    // 1. Validasi input
+    $credentials = $request->validate([
+        'email' => ['required', 'email'],
+        'password' => ['required'],
+    ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            
-            // Cek role user, jika admin ke dashboard, jika user biasa ke player
-            // Sesuaikan dengan kebutuhanmu, default ke home user
-            return redirect()->intended('/music'); 
+    // 2. Coba Login
+    if (Auth::attempt($credentials)) {
+        $request->session()->regenerate();
+
+        // --- LOGIKA PENENTUAN ARAH (DISINI PERUBAHANNYA) ---
+        
+        // Ambil data user yang sedang login
+        $user = Auth::user();
+
+        // Cek Role-nya
+        // Pastikan tulisan 'admin' sesuai persis dengan isi database kamu (huruf kecil/besar berpengaruh)
+        if ($user->role === 'admin') {
+            // Jika Admin, lempar ke Dashboard Admin
+            return redirect()->route('admin.dashboard');
+        } else {
+            // Jika User Biasa, lempar ke Player Musik
+            return redirect()->route('user.player');
         }
-
-        return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ]);
     }
 
+    // 3. Jika Gagal Login
+    return back()->withErrors([
+        'email' => 'Email atau password salah.',
+    ]);
+}
     public function logout(Request $request)
     {
         Auth::logout();
