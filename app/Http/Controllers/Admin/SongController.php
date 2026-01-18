@@ -83,50 +83,55 @@ class SongController extends Controller
     }
 
     // 2. Proses Update Data
-    public function update(Request $request, $id)
-    {
-        $song = Song::findOrFail($id);
+   // 2. Proses Update Data (VERSI FIX)
+   public function update(Request $request, string $id)
+   {
+       // 1. Ambil data lagu lama
+       $song = Song::findOrFail($id);
 
-        $request->validate([
-            'judul' => 'required|string|max:255',
-            'artis' => 'required|string|max:255',
-            'genre' => 'required|string',
-            'durasi' => 'required|string',
-            // File bersifat nullable (opsional), hanya validasi jika user upload file baru
-            'audio' => 'nullable|file|mimes:mp3,wav,flac,mpeg,mpga,bin,application/octet-stream|max:50000',
-            'cover' => 'nullable|image|max:2048',
-            'lyrics' => 'nullable|string',
-        ]);
+       // 2. Validasi (Sesuaikan nama field dengan form & database kamu)
+       $request->validate([
+           'judul'  => 'required|string|max:255',
+           'artis'  => 'required|string|max:255',
+           'genre'  => 'required|string',
+           'durasi' => 'required|string',
+           'cover'  => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Pakai 'cover' bukan 'cover_path'
+           'audio'  => 'nullable|file|max:50000', // Pakai 'audio' bukan 'audio_path'
+           'lyrics' => 'nullable|string',
+       ]);
 
-        // Logic Update Audio (Hanya jika ada file baru)
-        if ($request->hasFile('audio')) {
-            // Hapus file lama biar server gak penuh
-            if ($song->file_path && Storage::disk('public')->exists($song->file_path)) {
-                Storage::disk('public')->delete($song->file_path);
-            }
-            // Upload baru
-            $song->file_path = $request->file('audio')->store('songs', 'public');
-        }
+       // 3. Siapkan data dasar yang mau diupdate
+       $data = [
+           'judul'  => $request->judul,
+           'artis'  => $request->artis,
+           'genre'  => $request->genre,
+           'durasi' => $request->durasi,
+           'lyrics' => $request->lyrics,
+       ];
 
-        // Logic Update Cover (Hanya jika ada file baru)
-        if ($request->hasFile('cover')) {
-            if ($song->cover_path && Storage::disk('public')->exists($song->cover_path)) {
-                Storage::disk('public')->delete($song->cover_path);
-            }
-            $song->cover_path = $request->file('cover')->store('covers', 'public');
-        }
+       // 4. Logika Update Gambar (Hanya jika user upload gambar baru)
+       if ($request->hasFile('cover')) {
+           // Hapus file lama fisik jika bukan default
+           if ($song->cover_path && $song->cover_path !== 'covers/default_album.jpg' && Storage::disk('public')->exists($song->cover_path)) {
+               Storage::disk('public')->delete($song->cover_path);
+           }
+           // Upload baru dan update array data (kolom di DB namanya 'cover_path')
+           $data['cover_path'] = $request->file('cover')->store('covers', 'public');
+       }
 
-        // Update Text Data
-        $song->update([
-            'judul' => $request->judul,
-            'artis' => $request->artis,
-            'genre' => $request->genre,
-            'durasi' => $request->durasi,
-            'lyrics' => $request->lyrics,
-            // file_path & cover_path sudah dihandle diatas secara langsung ke objek $song
-        ]);
+       // 5. Logika Update Lagu (Hanya jika user upload lagu baru)
+       if ($request->hasFile('audio')) {
+           // Hapus file lama fisik
+           if ($song->file_path && Storage::disk('public')->exists($song->file_path)) {
+               Storage::disk('public')->delete($song->file_path);
+           }
+           // Upload baru dan update array data (kolom di DB namanya 'file_path')
+           $data['file_path'] = $request->file('audio')->store('songs', 'public');
+       }
 
-        return redirect()->route('admin.dashboard')->with('success', 'Lagu berhasil diperbarui!');
-    }
+       // 6. Eksekusi Update ke Database
+       $song->update($data);
 
+       return redirect()->route('admin.dashboard')->with('success', 'Lagu berhasil diperbarui!');
+   }    
 }
