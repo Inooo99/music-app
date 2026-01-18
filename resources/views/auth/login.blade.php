@@ -81,6 +81,9 @@
                     Masuk
                 </button>
             </form>
+            <div class="mt-4 text-center">
+                <a href="{{ route('register') }}" class="text-sm text-blue-600 hover:underline">Belum punya akun? Daftar disini</a>
+            </div>
         </div>
 
         <div class="text-center mt-6">

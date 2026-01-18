@@ -16,11 +16,21 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+// Group Guest: Hanya bisa diakses kalau BELUM login
+Route::middleware('guest')->group(function () {
+    // Login (Kode Lama Kamu)
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
-// --- ADMIN ROUTES ---
+    // Register (KODE BARU - TAMBAHAN)
+    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+});
+
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+
+// --- ADMIN ROUTES (TIDAK SAYA UBAH SAMA SEKALI) ---
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     
     Route::get('/songs/{id}/edit', [SongController::class, 'edit'])->name('songs.edit'); // Form Edit
